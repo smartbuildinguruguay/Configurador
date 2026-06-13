@@ -132,7 +132,65 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .m3d-prop{font-size:9px;font-weight:600;color:rgba(255,255,255,.8);background:rgba(255,255,255,.15);padding:2px 8px;border-radius:8px}
 
 @media(max-width:900px){
-  .page{grid-template-columns:1fr}
+  /* ── BODY / PAGE ── */
+  html,body{height:auto}
+  .page{
+    display:flex;flex-direction:column;
+    height:auto;overflow:visible;
+    padding:10px;gap:10px;
+    max-width:100%;
+  }
+  .left-col,.col,.right-col{
+    height:auto;overflow:visible;
+    min-height:unset;max-height:unset;
+  }
+
+  /* ── BANNER MOBILE ── */
+  .banner{padding:8px 14px;flex-wrap:wrap;gap:4px}
+  .b-left h1{font-size:12px}
+  .b-left p{font-size:9px}
+  .b-total{font-size:20px}
+  .b-ratio{font-size:13px}
+  .b-chips{display:none}       /* chips ocultos en mobile, ya se ve todo abajo */
+
+  /* ── MODELO 3D ── */
+  .m3d-card iframe{height:200px}
+
+  /* ── SECCIONES COLAPSABLES (mobile accordion) ── */
+  .mob-section{
+    background:#fff;border-radius:10px;
+    border:1px solid var(--border);
+    overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);
+  }
+  .mob-section-hdr{
+    padding:12px 14px;display:flex;justify-content:space-between;
+    align-items:center;cursor:pointer;user-select:none;
+    background:var(--pale);border-bottom:1px solid var(--border);
+  }
+  .mob-section-hdr h2{font-size:12px;font-weight:700;color:#333}
+  .mob-section-hdr .mob-arrow{font-size:11px;color:#999;transition:transform .2s}
+  .mob-section-hdr.open .mob-arrow{transform:rotate(180deg)}
+  .mob-section-body{display:none;padding:0}
+  .mob-section-body.open{display:block}
+
+  /* ── PRESUPUESTO MOBILE ── */
+  .pcard{flex:unset;height:auto;overflow:visible}
+  .pcard #pres-body{overflow:visible;height:auto}
+  .prow{padding:8px 12px;gap:8px}
+  .prow .pr-bar-wrap{width:70px}
+  .prow .pr-name{font-size:11px}
+  .ph{padding:10px 14px}
+  .ph-total{font-size:17px}
+  .pfoot{padding:10px 14px;flex-direction:column;align-items:flex-start;gap:4px}
+  .pfoot .pfr{font-size:14px}
+
+  /* ── OPCIONES MOBILE — botones más compactos ── */
+  .obtn{padding:10px 12px}
+  .obtn .od{display:none}   /* ocultar descripción secundaria para compactar */
+  .obtn.act .od{display:block}  /* mostrar solo en la opción activa */
+  .pbtn{padding:10px 12px}
+  .pbtn .pbd{display:none}
+  .pbtn.active .pbd{display:block}
 }
 </style>
 </head>
@@ -577,7 +635,73 @@ function setPiso(v){piso=v;render();}
 function setAbert(v){abert=v;render();}
 function setInt(v){intR=v;render();}
 
+// ── MOBILE: nav tabs + accordions ──────────────────────────
+var isMob=window.innerWidth<=900;
+
+function initMobile(){
+  if(!isMob)return;
+
+  // Nav tabs fijos debajo del banner
+  var nav=document.createElement('div');
+  nav.id='mob-nav';
+  nav.style.cssText='position:sticky;top:60px;z-index:200;background:var(--c1);display:flex;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;border-top:1px solid rgba(255,255,255,.12)';
+  var tabs=[
+    {id:'sec-modelo',label:'🏗 Modelo'},
+    {id:'sec-planos',label:'📐 Planos'},
+    {id:'sec-propuesta',label:'Propuesta'},
+    {id:'sec-opciones',label:'⚙ Opciones'},
+    {id:'sec-presupuesto',label:'💰 Presupuesto'},
+  ];
+  tabs.forEach(function(t,i){
+    var btn=document.createElement('button');
+    btn.style.cssText='flex:0 0 auto;padding:9px 14px;color:rgba(255,255,255,.6);background:none;border:none;border-bottom:3px solid transparent;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap';
+    btn.textContent=t.label;
+    btn.onclick=function(){
+      var el=document.getElementById(t.id);
+      if(el){el.scrollIntoView({behavior:'smooth',block:'start'});}
+    };
+    nav.appendChild(btn);
+  });
+  document.querySelector('.banner').insertAdjacentElement('afterend',nav);
+
+  // Wrap cada card de opciones en accordion
+  var ocards=document.querySelectorAll('.col .ocard');
+  ocards.forEach(function(card,i){
+    var hdrEl=card.querySelector('.ocard-hdr');
+    var title=hdrEl?hdrEl.textContent.trim():'Opciones';
+    var wrap=document.createElement('div');
+    wrap.className='mob-section';
+    card.parentNode.insertBefore(wrap,card);
+    var hdr=document.createElement('div');
+    hdr.className='mob-section-hdr'+(i===0?' open':'');
+    hdr.innerHTML='<h2>'+title+'</h2><span class="mob-arrow">▼</span>';
+    var body=document.createElement('div');
+    body.className='mob-section-body'+(i===0?' open':'');
+    body.appendChild(card);
+    wrap.appendChild(hdr);
+    wrap.appendChild(body);
+    hdr.onclick=function(){
+      var isOpen=body.classList.contains('open');
+      body.classList.toggle('open',!isOpen);
+      hdr.classList.toggle('open',!isOpen);
+    };
+  });
+
+  // IDs para scroll de nav
+  var m3d=document.querySelector('.m3d-card');if(m3d)m3d.id='sec-modelo';
+  var planos=document.querySelector('.planos-card');if(planos)planos.id='sec-planos';
+  var propCard=document.querySelector('.mob-section');if(propCard)propCard.id='sec-propuesta';
+  var col2=document.querySelector('.col');if(col2)col2.id='sec-opciones';
+  var rcol=document.querySelector('.right-col');if(rcol)rcol.id='sec-presupuesto';
+}
+
+window.addEventListener('resize',function(){
+  var newMob=window.innerWidth<=900;
+  if(newMob!==isMob){isMob=newMob;location.reload();}
+});
+
 render();
+initMobile();
 </script>
 
 </body></html>
